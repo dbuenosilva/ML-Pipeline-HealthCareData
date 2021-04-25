@@ -18,7 +18,7 @@ path = path= 'C:/users/vanessa/Documents/GitHub/ML-Pipeline-Hotel-booking-demand
 
 #Function to open file
 def openfile(path):
-    db_file = read_csv(path, header=None)
+    db_file = read_csv(path, encoding='unicode_escape', header=None)
     print(db_file)
     return db_file
 
@@ -34,18 +34,6 @@ print(db.head())
 db.info()
 
 
-''
-
-[r, c] = db.shape 
-X = db.iloc[:, 1:c-1].values # external force
-y = db.iloc[:, c-1:c].values # velocity of charged particles
-
-
-# reshape and resize - already done with df.iloc[].values
-# X = np.reshape(X, (r, 1))
-# y = np.reshape(y, (r, 1)) 
-
-'''
 
 
 ## process to cleaning data
@@ -106,3 +94,15 @@ db.drop(columns=23, inplace=True, axis=1)
 
 print(db.shape)
 print(np.sum(db.isnull()))
+
+
+#Get the X and Y for test and training
+
+[r, c] = db.shape 
+X = db.iloc[:, 1:c-1].values # external force
+y = db.iloc[:, c-1:c].values # velocity of charged particles
+
+
+# reshape and resize - already done with df.iloc[].values
+X = np.reshape(X, (r, 1))
+y = np.reshape(y, (r, 1)) 
