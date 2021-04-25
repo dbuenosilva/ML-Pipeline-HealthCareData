@@ -5,6 +5,7 @@ Created on Wed Apr 21 19:19:55 2021
 @author: vanessa silva
 """
 
+#Libraries used to pre-processing
 import pandas as pd 
 from pandas import read_csv
 import numpy as np
@@ -12,12 +13,28 @@ from numpy import unique
 from sklearn.feature_selection import VarianceThreshold
 
 
-# load database
+# path to open the file
+path = path= 'C:/users/vanessa/Documents/GitHub/ML-Pipeline-Hotel-booking-demand/data/hotel_bookings.csv'
+
+#Function to open file
+def openfile(path):
+    db_file = read_csv(path, header=None)
+    print(db_file)
+    return db_file
 
 
-db = read_csv("hotel_bookings.csv", encoding='unicode_escape', header=None)
-#df = read_csv("sudeste.csv", encoding='unicode_escape', header=None)
-#df = read_csv("time_series_covid_19_confirmed.csv", header=None)
+#calling the function to Load database
+db = openfile(path)
+
+
+print(db.shape)
+print(db.head())
+
+# Get database information
+db.info()
+
+
+''
 
 [r, c] = db.shape 
 X = db.iloc[:, 1:c-1].values # external force
@@ -28,12 +45,8 @@ y = db.iloc[:, c-1:c].values # velocity of charged particles
 # X = np.reshape(X, (r, 1))
 # y = np.reshape(y, (r, 1)) 
 
+'''
 
-print(db.shape)
-#print(df.head())
-
-# Get database information
-db.info()
 
 ## process to cleaning data
 # Print imformation about null data in the column
@@ -93,4 +106,3 @@ db.drop(columns=23, inplace=True, axis=1)
 
 print(db.shape)
 print(np.sum(db.isnull()))
-
