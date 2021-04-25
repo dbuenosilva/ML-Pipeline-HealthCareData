@@ -33,6 +33,7 @@ import logging
 from io import StringIO
 import sys
 import pathlib
+from sklearn.preprocessing import LabelEncoder
 
 ## Importing especific functions used in this program 
 path = str(pathlib.Path(__file__).resolve().parent) + "/"
@@ -132,14 +133,35 @@ def savefile(df, myNewCsv):
   
     return 
 
+###########################################################################
+#Function> convert
+
+# Author: Vanessa Gomes - v.gomes.da.silva.10@student.scu.edu.au 
+# Date: 25/04/2021
+
+# Description: Convert the string columns to numrical to be used to Training and test
+# 
+# Parameters: database - database file
+#             
+# 
+# Return: databse tranformed into columns with numbers 
+###########################################################################
+#Functin to convert strings into numbers
+    
+def convert(database):
+
+    le = LabelEncoder()
+    
+    
+    ## Select all categorcial features
+    c_features = list(database.columns[database.dtypes == object])
+    
+    
+    ## Apply Label Encoding on all categorical features
+    return database[c_features].apply(lambda x: le.fit_transform(x.astype(str)), axis=0, result_type='expand')
 
 
-
-
-
-
-
-
+###########################################################################
 
 
 
