@@ -16,6 +16,8 @@
 #
 ##########################################################################>
 
+
+### SQL Server connection
 serverInstance = 'gwayaanalytics.database.windows.net,1433/gwayaanalytics' 
 testServer = 'gwayaanalytics.database.windows.net\\gwayaanalytics' 
 server = 'gwayaanalytics.database.windows.net'  

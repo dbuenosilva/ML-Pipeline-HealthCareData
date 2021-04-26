@@ -158,7 +158,7 @@ def convert(database):
     c_features = list(database.columns[database.dtypes == object])
 
     ## Apply Label Encoding on all categorical features
-    return database[c_features].apply(lambda x: le.fit_transform(x.astype(str)), axis=0, result_type='expand')
+    return database[c_features].apply(lambda x: le.fit_transform(x.astype(str)), axis=0, result_type='broadcast')
 
 
 #########################################################################

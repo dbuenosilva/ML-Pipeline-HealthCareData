@@ -10,21 +10,31 @@
 ##########################################################################
 # Maintenance                            
 # Author: Diego Bueno                         
-# Date:  26/04/2021                                                       
+# Date:  18/04/2021                                                       
 # Description: Adding conditions to evaluate the action ( drop, insert, etc)      
+#
+##########################################################################>
+# Maintenance                            
+# Author: Diego Bueno                         
+# Date:  26/04/2021                                                       
+# Description: Adding ML model to predic [agent] missing values     
 #
 ##########################################################################>
 
 import numpy as np
+import pandas as pd
 
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import PolynomialFeatures
 from sklearn.neighbors import LocalOutlierFactor
 from sklearn.metrics import mean_absolute_error
 
 from functions import openfile
 from functions import savefile
 from functions import convert
+
+from machineLearning import getMachineLearningModel
 
 #calling the function to Load data pre-reading on task 1
 print("\nReading the step01 file\n")
@@ -81,11 +91,11 @@ else:
     print("\nThe new shape of the data: " + str(rows) + " rows and " + str(columns) + " columns")
  
 
-print("\nFilling often values into null registers of [country] column...")     
+print("\nFilling in often values into null registers of [country] column...")     
 # Using the function .mode to insert the most often values into the null rowns 
 db["country"].fillna(db["country"].mode().to_string(), inplace=True)
 
-print("\nFilling rounded mean values into null registers of [children] column...")     
+print("\nFilling in rounded mean values into null registers of [children] column...")     
 #Insert rounded mean value to the null values rowns
 db["children"].fillna(round(db["children"].mean()), inplace=True)
 
@@ -95,31 +105,68 @@ nullReport = np.sum(db.isnull())
 # Print imformation about null data in the column
 for index, value in nullReport.items():
     if value > 0:
-        print(str(index) + " contains " + str(value) + " null registers (" + str( round(value/rows*100,3) )  + "%)" )    
+        print("[" + str(index) + "] contains " + str(value) + " null registers (" + str( round(value/rows*100,3) )  + "%)" )    
    
+    
+print("\nFilling in predicted values into null registers of [agent] column" 
+          " according to the Country, Market Segment and Distribution Channel:")     
+
+# Creating a dataFrame with 
+#   [country] => db.iloc[:,14:15]
+#   [market_segment]	  => db.iloc[:,15:16]
+#   [distribution_channel]  => db.iloc[:,16:17]
+#   [agent]   => db.iloc[:,24:25]
+
+# Converting [country], [market_segment] and	[distribution_channel]
+print("\n01 step => Converting categorical values to numerical classes...\n")
+numeralClassesCountryDf = convert( db.iloc[:,14:17] ) 
+onlyAgentsDF = db.iloc[ :,24:25]  #[agent] 
+
+print("\n02 step => Creating a Training data frame with only [country] and [agent] columns...\n")
+myTrainingDf = pd.concat( [ numeralClassesCountryDf,  onlyAgentsDF], axis=1 )  
+
+print("\n03 step => Removing Null columns for [agent] on the Training data frame...\n")
+myTrainingDf = myTrainingDf.dropna()
+
+print("Checking the current shape of the training data:")
+rows, columns = myTrainingDf.shape
+print( str(rows) + " rows and " + str(columns) + " columns")
+
+print("\n04 step => Summarizing [country], [market_segment], [distribution_channel] and [agent] on the Training data frame...\n")
+myTrainingDf = myTrainingDf.reset_index(drop=True) #removing index column
+myTrainingDf.drop_duplicates(inplace=True)
+
+print("\nChecking the current shape of the training data:")
+rows, columns = myTrainingDf.shape
+print( str(rows) + " rows and " + str(columns) + " columns")
+
+print("\n05 step => Final training DF for Machine Learning use on predicts [agent] :\n")
+print(myTrainingDf)
+
+print("\n06 step => Defining the best Machine Learning model...\n")
+myModel = getMachineLearningModel(myTrainingDf, posX = 0, posY = 1)
+
+print(myModel.coef_)
+
+print("\n07 step => Infering agent values ...\n")
+
+#country-market_segment-distribution_channel-of-null-agents
+poly = PolynomialFeatures(degree = myModel.coef_).fit_transform()
+X_poly = poly.fit_transform(numeralClassesCountryDf.values)
+
+#X_poly = myModel.transform(numeralClassesCountryDf.values)
+predicted_agents = myModel.predic(X_poly)
+
+#print(predicted_agents)
+
+#db["agent"].fillna(myModel.predict(db["agent"]), inplace=True)    
 
 
-""" 
-
-# Delete the column agent that has no exprecive value for our classification
-#db.drop(columns=23, inplace=True, axis=1)
-db.drop(columns="agent", inplace=True, axis=1)
-
-
-#criar coluna
-#db['arrival_date'] = pd.to_datetime(db[3].astype(str) + '/' + db[5].astype(str) + '/' + db[4].astype(str))
-
-#deletar colunas.
-# db.drop(columns=["arrival_date_week_number", "arrival_date_year", "arrival_date_month", "arrival_date_day_of_month"],
-#            inplace=True, axis=1)
-
-
-""" 
 
 ## Saving current DF to CSV to step03
-print("\nRecording step02.scv file...")
-savefile(db,"data/step02.csv")
-print("done! \n\nstep02.csv file is ready for feature extraction task\n")
+#print("\nRecording step02.scv file...")
+#savefile(db,"data/step02.csv")
+#print("done! \n\nstep02.csv file is ready for feature extraction task\n")
 
 
 
