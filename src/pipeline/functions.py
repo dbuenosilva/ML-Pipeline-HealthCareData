@@ -16,24 +16,27 @@
 #
 ##########################################################################>
 
-import pickle
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import tensorflow as tf # using Tensorflow 2.4
-from tensorflow.keras import backend as K
-from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint 
+import matplotlib.pyplot as plt 
+import datetime
+import logging
+import sys
+import pathlib
+import re
 # import pyodbc => does not work on MacOS
-import pymssql 
+import pymssql
 import sqlalchemy as sal
 from sqlalchemy import create_engine
 from sqlalchemy import exc
-import datetime
-import logging
-from io import StringIO
-import sys
-import pathlib
 from sklearn.preprocessing import LabelEncoder
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.model_selection import KFold
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import train_test_split
+from sklearn.model_selection import LeaveOneOut
+
 
 ## Importing especific functions used in this program 
 path = str(pathlib.Path(__file__).resolve().parent) + "/"
@@ -104,17 +107,17 @@ def DataFrameToSqlDb(myDf,tableName):
 
 #Function to open file
 def openfile(myCsv):
-        
+
+    #print("Loading file " + path + myCsv)
+    #print(path + myCsv)
+
     db_file = pd.read_csv(path + myCsv) #, encoding='unicode_escape', header=None)
-    print(db_file)
     return db_file
-
-
 
 
 ##########################################################################
 # Function: savefile 
-# Author: Vanessa Gomes - v.gomes.da.silva.10@student.scu.edu.au 
+# Author: Diego Bueno - d.bueno.da.silva.10@student.scu.edu.au 
 # Date: 25/04/2021
 # Description: Save a CSV to Pandas Dataframe 
 # 
@@ -125,7 +128,6 @@ def openfile(myCsv):
 #
 ##########################################################################
 
-#Function to open file
 def savefile(df, myNewCsv):
         
     
@@ -133,8 +135,9 @@ def savefile(df, myNewCsv):
   
     return 
 
+
 ###########################################################################
-#Function> convert
+#Function: convert
 
 # Author: Vanessa Gomes - v.gomes.da.silva.10@student.scu.edu.au 
 # Date: 25/04/2021
@@ -146,95 +149,31 @@ def savefile(df, myNewCsv):
 # 
 # Return: databse tranformed into columns with numbers 
 ###########################################################################
-#Functin to convert strings into numbers
     
 def convert(database):
 
-    le = LabelEncoder()
-    
+    le = LabelEncoder()   
     
     ## Select all categorcial features
     c_features = list(database.columns[database.dtypes == object])
-    
-    
+
     ## Apply Label Encoding on all categorical features
     return database[c_features].apply(lambda x: le.fit_transform(x.astype(str)), axis=0, result_type='expand')
 
 
-###########################################################################
+#########################################################################
+# Function: removeSpecialCharacteres 
+# Author: Diego Bueno - d.bueno.da.silva.10@student.scu.edu.au
+# Date: 25/04/2021
+# Description: Remove special characters from a string 
+# 
+# Parameters: originalString - the original string to remove special char.
+#             specialChars - Special caracteres to be removed.
+# 
+# Return: newString - The new cleanned string.
+#
+##########################################################################
 
-
-
-
-
-
-
-
-
-
-""" Function read( file_name  )
-
-    Read a pickle file format  
-    and return a Python dictionary with its content.
-
-    parameters: (String) file_name
-
-    return: 
-        dict: a dictionary with the content encoding in bytes
-    
-"""
-def read(file_name):
-    with open(file_name, 'rb') as fo:
-        dict = pickle.load(fo, encoding='bytes')
-    return dict
-
-
-
-""" Function getMyEarlyStop( myMonitor, myPatience,  myModelFile )
-
-    Set callback functions to early stop training, save the best model  
-    to disk and return it as array.
-
-    parameters: (String) myMonitor - metric name chose for monitor
-                   (int) myPatience - number of epochs to interrupt in case 
-                                      there is no longer improvement
-                (String) myModelFile - path including file name to save the 
-                                      best model.
-
-    return: 
-        callbacks: array with callback functions
-    
-"""
-def getMyEarlyStop( myMonitor = "", myPatience = 0, myModelFile = "" ):
-    
-    if not myMonitor or myPatience <= 0 or not myModelFile:
-        print("Invalid parameters!")
-        return []
-    
-    callbacks = [EarlyStopping(monitor=myMonitor, patience=myPatience, mode='auto'),
-    ModelCheckpoint(filepath=myModelFile, monitor=myMonitor, save_best_only=True, verbose=1)]
-    return callbacks                 
-
-
-
-""" Function saveResultToFile(   )
-
-    Save results
-    
-    parameters:
-
-    return: 
-        none
-    
-"""
-def saveToFile(file , contend ):
-
-    try:
-        f = open(file, "a")
-        f.write(contend)
-        f.close()
-    except:
-        print("\nError to save contend " + contend + " to file " + file + "!" )
-
-
+def removeSpecialCharacteres( originalString, specialChars="[!@#$%ˆ&*()_+=\][{}|<>??/.,'˜`]"):
+    return re.sub(specialChars,'',originalString ).strip().title()
 

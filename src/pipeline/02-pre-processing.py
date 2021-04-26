@@ -5,17 +5,16 @@
 # File: 02-pre-processing.py
 # Author: Vanessa Gomes - v.gomes.da.silva.10@student.scu.edu.au 
 # Date: 20/04/2021
-# Description: 
+# Description: Libraries used to pre-processing
 #
 ##########################################################################
 # Maintenance                            
-# Author:                         
-# Date:                                                         
-# Description:         
+# Author: Diego Bueno                         
+# Date:  26/04/2021                                                       
+# Description: Adding conditions to evaluate the action ( drop, insert, etc)      
 #
 ##########################################################################>
 
-#Libraries used to pre-processing
 import numpy as np
 
 from sklearn.model_selection import train_test_split
@@ -27,53 +26,84 @@ from functions import openfile
 from functions import savefile
 from functions import convert
 
-#calling the function to Load database
-db = openfile('data/hotel_bookings.csv')
+#calling the function to Load data pre-reading on task 1
+print("\nReading the step01 file\n")
+db = openfile('data/step01.csv')
 
-print(db.shape)
-print(db.head())
+print("\nChecking the current shape of the data:")
+rows, columns = db.shape
+print( str(rows) + " rows and " + str(columns) + " columns")
 
-# Get database information
-db.info()
+print("\nBrief summary of data:\n")
+print(db.head(5))
 
-## process to cleaning data
+print("\nGetting database information:\n\n")
+#db.info() ### try to gropup by datatype
+
+###################################################
+#
+#  Starting the process of cleaning data
+#
+###################################################
+print("\nGetting NULL values in each column:\n")
+nullReport = np.sum(db.isnull())
+
 # Print imformation about null data in the column
-print(np.sum(db.isnull()))
+for index, value in nullReport.items():
+    if value > 0:
+        print("[" + str(index) + "] contains " + str(value) + " null registers (" + str( round(value/rows*100,3) )  + "%)" )    
+   
+    
+print("\nRemoving columns with more than 60% of null values:\n")   
 
-#Remove the columns with more than 60% of null value
 for v_col in db.columns:
-    if np.sum(db[v_col].isnull())>(db.shape[0] * 0.6):
- 
+    if np.sum(db[v_col].isnull())>(rows * 0.6):
         db.drop(columns=v_col, inplace=True, axis=1)
-print(db.shape)
-print(np.sum(db.isnull()))
-
-
-#Print duplicates
+        print("Column [" + v_col + "] removed!")        
+   
+rows, columns = db.shape
+print("\nThe new shape of the data: " + str(rows) + " rows and " + str(columns) + " columns")
+              
+print("\nChecking duplicated values:") 
 dups = db.duplicated()
 
-# Indicates if there is duplicate data with - True or false
-print('Is there duplicate data?= ', dups.any())
+if not dups.any(): # Indicates if there is duplicate data with - True or false    
+    print('\nThere is no duplicate information in the dataset!')
+else:
+    # show the list of duplicate rows
+    print('\nShowing duplicated rowns:')
+    print(db[dups])
 
-# show the list of duplicate rows
-print('Show duplicat rowns= ',db[dups])
-db.drop_duplicates(inplace=True)
-print(db.shape)
+    print('\nDropping duplicated rowns:')
+    db.drop_duplicates(inplace=True)
+    
+    rows, columns = db.shape
+    print("\nThe new shape of the data: " + str(rows) + " rows and " + str(columns) + " columns")
+ 
 
+print("\nFilling often values into null registers of [country] column...")     
 # Using the function .mode to insert the most often values into the null rowns 
 db["country"].fillna(db["country"].mode().to_string(), inplace=True)
 
-# Drop rown when Conuntry is null 
-#db.dropna(subset=["country"], inplace=True)
+print("\nFilling rounded mean values into null registers of [children] column...")     
+#Insert rounded mean value to the null values rowns
+db["children"].fillna(round(db["children"].mean()), inplace=True)
+
+print("\nReviewing NULL values in each column:\n")
+nullReport = np.sum(db.isnull())
+
+# Print imformation about null data in the column
+for index, value in nullReport.items():
+    if value > 0:
+        print(str(index) + " contains " + str(value) + " null registers (" + str( round(value/rows*100,3) )  + "%)" )    
+   
 
 
+""" 
 
 # Delete the column agent that has no exprecive value for our classification
 #db.drop(columns=23, inplace=True, axis=1)
 db.drop(columns="agent", inplace=True, axis=1)
-
-#Insert rounded mean value to the null values rowns
-db["children"].fillna(round(db["children"].mean()), inplace=True)
 
 
 #criar coluna
@@ -83,63 +113,16 @@ db["children"].fillna(round(db["children"].mean()), inplace=True)
 # db.drop(columns=["arrival_date_week_number", "arrival_date_year", "arrival_date_month", "arrival_date_day_of_month"],
 #            inplace=True, axis=1)
 
-print(db.shape)
-print(np.sum(db.isnull()))
-print(db.head())
 
-#Get the X and Y for test and training
-
-df = convert(db) # Used function that converted the columns with string values to number 
-
-X = df.iloc[:,:-1].values 
-y = df.iloc[:,-1].values 
-
-
-print(X.shape, y.shape)
-
-# Split the data to 80% training and 20% teste
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, random_state=1)
-
-print(X_train.shape, y_train.shape)
-
-# fit the model
-my_model = LinearRegression()
-my_model.fit(X_train, y_train)
-
-# evaluate model
-Y = my_model.predict(X_test)
-
-# show the mean absolute error
-mae = mean_absolute_error(y_test, Y)
-print('mae %.3f' % mae)
-
-
-
-# Into the training dataset indenfing the outliers 
-Loc_OF = LocalOutlierFactor() 
-Y = Loc_OF.fit_predict(X_train)
-
-# select all rows that are not outliers
-mask_out = Y != -1
-X_train, y_train = X_train[mask_out, :], y_train[mask_out]
-
-# summarize the shape of the updated training dataset
-print(X_train.shape, y_train.shape)
-
-# fit the model
-my_model = LinearRegression()
-my_model.fit(X_train, y_train)
-
-# evaluate the model
-Y = my_model.predict(X_test)
-
-# show the mean absolute error
-mae = mean_absolute_error(y_test, Y)
-print('MAE not Outliers: %.3f' % mae)
-
+""" 
 
 ## Saving current DF to CSV to step03
-savefile(df,"data/step02.csv")
+print("\nRecording step02.scv file...")
+savefile(db,"data/step02.csv")
+print("done! \n\nstep02.csv file is ready for feature extraction task\n")
+
+
+
 
 
 
