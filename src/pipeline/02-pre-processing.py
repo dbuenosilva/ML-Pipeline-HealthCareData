@@ -89,8 +89,8 @@ print(db.head())
 
 #Get the X and Y for test and training
 
-df = convert(db)
- # Used function that converted the columns with string values to number 
+df = convert(db) # Used function that converted the columns with string values to number 
+
 X = df.iloc[:,:-1].values 
 y = df.iloc[:,-1].values 
 
