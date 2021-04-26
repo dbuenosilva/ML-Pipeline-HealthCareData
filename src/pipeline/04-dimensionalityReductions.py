@@ -106,7 +106,7 @@ features = my_model.n_outputs_
 print('\nFeature ;', features)
 print('\nPrint X = ',X)
 
-# this useless column reach here!!!
+# this useless column reached here!!!
 db = db.drop(columns=["Unnamed: 0"])
 
 print("Grouping by the more relevant feature: [arrival_date_month] ")
