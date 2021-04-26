@@ -1,8 +1,25 @@
-# Libraryies used 
+# -*- coding: utf-8 -*-
+
+##########################################################################
+# Project: COMP6004 - Machine learning pipeline for data analysis
+# File: 04-dimensionalityReductions.py
+# Author: Vanessa Gomes - v.gomes.da.silva.10@student.scu.edu.au 
+# Date: 20/04/2021
+# Description: Libraries used to dimensionality reduction process
+#
+##########################################################################
+# Maintenance                            
+# Author: 
+# Date:  
+# Description: 
+#
+##########################################################################>
+
 
 import numpy as np
 from functions import openfile
 from numpy import set_printoptions
+from functions import savefile
 from sklearn.decomposition import PCA
 from sklearn.feature_selection import SelectKBest
 from sklearn.feature_selection import f_classif
@@ -12,19 +29,18 @@ from sklearn.ensemble import ExtraTreesClassifier
 
 
 #Name of columns for the database
-name:['hotel','is_canceled','lead_time','arrival_date_year','arrival_date_month','arrival_date_week_number','arrival_date_day_of_month','stays_in_weekend_nights','stays_in_week_nights','adults','children','babies','meal','country','market_segment','distribution_channel','is_repeated_guest','previous_cancellations','previous_bookings_not_canceled','reserved_room_type','assigned_room_type','booking_changes','deposit_type','days_in_waiting_list','customer_type','adr','required_car_parking_spaces','total_of_special_requests','reservation_status','reservation_status_date']
-
+#name:[arrival_date_month	meal	country	market_segment	distribution_channel	reserved_room_type	assigned_room_type	customer_type
 
 # Open datavase saved with preprocessing alterations 
 
-db = openfile('data/step02.csv')
+db = openfile('data/step03.csv')
 
 print(db.shape)
 
 # Get the features
 array = db.values
-X = array[:,0:11]
-Y = array[:,11]
+X = array[:,0:8]
+Y = array[:,8]
 
 
 ########################## PCA Method #####################################
@@ -33,25 +49,25 @@ Y = array[:,11]
 pca = PCA(n_components=4)# Select the most important features
 fit = pca.fit(X) 
 # summarize components
-print("Explained Variance Ratio : %s" % fit.explained_variance_ratio_)
-print('Fit components for PCA ;',fit.components_)
+print("\nExplained Variance Ratio : %s" % fit.explained_variance_ratio_)
+print('\nFit components for PCA ;',fit.components_)
 features = fit.transform(X)
-print('Feature - Fit Transform for X -PCA : ',features)
+print('\nFeature - Fit Transform for X -PCA : ',features)
 
 
 ########### Universal Statistical Tests ###################################
 # Extraction
-test = SelectKBest(score_func=f_classif, k=10) # the feature classification
+test = SelectKBest(score_func=f_classif, k=8) # the feature classification
 fit = test.fit(X, Y)
 # summarize scores
 set_printoptions(precision=4)
-print('Fit scores for UST ', fit.scores_)
+print('\nFit scores for UST ', fit.scores_)
 features = fit.transform(X)
-print('Feature of Fit Tranformatio for X UST= ',features)
+print('\nFeature of Fit Tranformatio for X UST= ',features)
 
 # summarize selected features
-print('Feature - Fit Transform for X -PCA : ',features[0,:])
-print('Print X = ',X)
+print('\nFeature - Fit Transform for X -PCA : ',features[0,:])
+print('\nPrint X = ',X)
 
 
 ######################## RFE ################################################
@@ -61,11 +77,11 @@ print('Print X = ',X)
 my_model = LogisticRegression(solver='liblinear')
 rfe = RFE(my_model, 4)
 fit = rfe.fit(X, Y)
-print("Qtd of Features: %d" % fit.n_features_)
-print("Selected Features: %s" % fit.support_)
-print("Feature Ranking: %s" % fit.ranking_)
-print('Feature ;', features[0,:])
-print('Print X = ',X[0,:])
+print("\n\nQtd of Features: %d" % fit.n_features_)
+print("\nSelected Features: %s" % fit.support_)
+print("\nFeature Ranking: %s" % fit.ranking_)
+print('\nFeature ;', features[0,:])
+print('\nPrint X = ',X[0,:])
 
 ###################### Trees Classifier ################################
 #Extra Trees Classifier
@@ -73,20 +89,39 @@ print('Print X = ',X[0,:])
 # Extraction
 my_model = ExtraTreesClassifier(n_estimators=4) # The number of trees in the forest.
 my_model.fit(X, Y)
-print('Feature importance based o Trees Classif =', my_model.feature_importances_)
+print('\nFeature importance based o Trees Classif =', my_model.feature_importances_)
 imfeat = np.argsort(my_model.feature_importances_)
-print('Imfeat - Trees Class =',imfeat)
+print('\nImfeat - Trees Class =',imfeat)
 features = my_model.n_outputs_
-print('Feature ;', features)
-print('Print X = ',X)
+print('\nFeature ;', features)
+print('\nPrint X = ',X)
 
 # Bagged decision tree
 
 # Extraction
 my_model = ExtraTreesClassifier(n_estimators=4) # The number of trees in the forest.
 my_model.fit(X, Y)
-print('Bagged decision tree =', my_model.feature_importances_)
+print('\nBagged decision tree =', my_model.feature_importances_)
 features = my_model.n_outputs_
-print('Feature ;', features)
-print('Print X = ',X)
+print('\nFeature ;', features)
+print('\nPrint X = ',X)
+
+# this useless column reach here!!!
+db = db.drop(columns=["Unnamed: 0"])
+
+print("Grouping by the more relevant feature: [arrival_date_month] ")
+db = db.groupby(["arrival_date_month"]).sum()
+
+
+print("\nThe new shape of the data:")
+rows, columns = db.shape
+print( str(rows) + " rows and " + str(columns) + " columns")
+
+print("\nBrief summary of data:\n")
+print(db.head(5))
+## Saving current DF to CSV to step04
+print("\nRecording step04.scv file...")
+savefile(db,"data/step04.csv")
+print("done! \n\nstep04.csv file is ready for Dimensionality Reduction task\n")
+
 
