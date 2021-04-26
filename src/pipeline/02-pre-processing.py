@@ -24,12 +24,7 @@
 import numpy as np
 import pandas as pd
 
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
-from sklearn.neighbors import LocalOutlierFactor
-from sklearn.metrics import mean_absolute_error
-
 from functions import openfile
 from functions import savefile
 from functions import convert
@@ -126,47 +121,38 @@ print("\n02 step => Creating a Training data frame with only [country] and [agen
 myTrainingDf = pd.concat( [ numeralClassesCountryDf,  onlyAgentsDF], axis=1 )  
 
 print("\n03 step => Removing Null columns for [agent] on the Training data frame...\n")
-myTrainingDf = myTrainingDf.dropna()
+myTrainingDfWithoutNulls = myTrainingDf.dropna()
 
 print("Checking the current shape of the training data:")
-rows, columns = myTrainingDf.shape
+rows, columns = myTrainingDfWithoutNulls.shape
 print( str(rows) + " rows and " + str(columns) + " columns")
 
 print("\n04 step => Summarizing [country], [market_segment], [distribution_channel] and [agent] on the Training data frame...\n")
-myTrainingDf = myTrainingDf.reset_index(drop=True) #removing index column
-myTrainingDf.drop_duplicates(inplace=True)
+myTrainingDfWithoutNulls = myTrainingDfWithoutNulls.reset_index(drop=True) #removing index column
+myTrainingDfWithoutNulls.drop_duplicates(inplace=True)
 
 print("\nChecking the current shape of the training data:")
-rows, columns = myTrainingDf.shape
+rows, columns = myTrainingDfWithoutNulls.shape
 print( str(rows) + " rows and " + str(columns) + " columns")
 
 print("\n05 step => Final training DF for Machine Learning use on predicts [agent] :\n")
-print(myTrainingDf)
+print(myTrainingDfWithoutNulls)
 
 print("\n06 step => Defining the best Machine Learning model...\n")
-myModel = getMachineLearningModel(myTrainingDf, posX = 0, posY = 1)
+myModel, degree = getMachineLearningModel(myTrainingDfWithoutNulls, posX = 0, posY = 1)
 
-print(myModel.coef_)
+print("\n07 step => Infering agents values based on its country, market segment and distribution channel...\n")
+#myTrainingDfOnlyNullsAgents = myTrainingDf[myTrainingDf.isnull().any(1)]                   
+poly = PolynomialFeatures(degree = degree)
+# transforming [country], [market_segment] and [distribution_channel]
+X_poly = poly.fit_transform(myTrainingDf.iloc[:,0:3])
+predicted_agents = np.absolute(myModel.predict(X_poly).astype(int))
+db = db.fillna( pd.DataFrame(predicted_agents, columns=['agent']) )
 
-print("\n07 step => Infering agent values ...\n")
-
-#country-market_segment-distribution_channel-of-null-agents
-poly = PolynomialFeatures(degree = myModel.coef_).fit_transform()
-X_poly = poly.fit_transform(numeralClassesCountryDf.values)
-
-#X_poly = myModel.transform(numeralClassesCountryDf.values)
-predicted_agents = myModel.predic(X_poly)
-
-#print(predicted_agents)
-
-#db["agent"].fillna(myModel.predict(db["agent"]), inplace=True)    
-
-
-
-## Saving current DF to CSV to step03
-#print("\nRecording step02.scv file...")
-#savefile(db,"data/step02.csv")
-#print("done! \n\nstep02.csv file is ready for feature extraction task\n")
+## Saving current DF to CSV to step02
+print("\nRecording step02.scv file...")
+savefile(db,"data/step02.csv")
+print("done! \n\nstep02.csv file is ready for feature extraction task\n")
 
 
 
